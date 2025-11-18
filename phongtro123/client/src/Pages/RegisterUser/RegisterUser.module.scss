@@ -1,0 +1,122 @@
+.wrapper {
+    min-height: 100vh;
+    background-color: #fff5f0;
+}
+
+.main {
+    width: 500px;
+    margin: 100px auto;
+    background-color: #fff;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    padding: 30px;
+}
+
+.login-container {
+    display: flex;
+    flex-direction: column;
+}
+
+.footer {
+    display: flex;
+    justify-content: space-between;
+}
+
+.login-tabs {
+    :global {
+        .ant-tabs-nav::before {
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .ant-tabs-tab {
+            font-size: 25px;
+            padding: 12px 0;
+
+            &.ant-tabs-tab-active .ant-tabs-tab-btn {
+                color: #e03c31;
+                font-weight: 600;
+            }
+        }
+
+        .ant-tabs-ink-bar {
+            background-color: #e03c31;
+            height: 3px;
+        }
+    }
+}
+
+.login-form {
+    margin-top: 20px;
+
+    :global {
+        .ant-form-item {
+            margin-bottom: 20px;
+        }
+
+        .ant-input-affix-wrapper {
+            padding: 12px;
+            border-radius: 8px;
+
+            &:hover,
+            &:focus,
+            &-focused {
+                border-color: #e03c31;
+                box-shadow: 0 0 0 2px rgba(224, 60, 49, 0.1);
+            }
+        }
+
+        .ant-input-prefix {
+            color: #bfbfbf;
+            margin-right: 10px;
+        }
+    }
+}
+
+.login-button {
+    height: 50px;
+    font-size: 16px;
+    font-weight: 600;
+    border-radius: 8px;
+    background-color: #e03c31;
+    border-color: #e03c31;
+
+    &:hover,
+    &:focus {
+        background-color: #c62a20;
+        border-color: #c62a20;
+    }
+}
+
+.forgot-password {
+    display: block;
+    text-align: right;
+    color: #e03c31;
+
+    &:hover {
+        color: #c62a20;
+    }
+}
+
+.terms {
+    margin-top: 20px;
+    text-align: center;
+    font-size: 13px;
+    color: #8c8c8c;
+
+    :global {
+        .ant-typography a {
+            color: #e03c31;
+
+            &:hover {
+                color: #c62a20;
+            }
+        }
+    }
+}
+
+.footer {
+    margin-top: 30px;
+    text-align: center;
+    font-size: 13px;
+    color: #8c8c8c;
+}

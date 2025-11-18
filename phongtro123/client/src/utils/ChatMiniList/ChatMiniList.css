@@ -1,0 +1,253 @@
+.chat-mini-list {
+    position: fixed;
+    bottom: 0;
+    right: 20px;
+    background-color: #fff;
+    border-radius: 10px 10px 0 0;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    width: 300px;
+    transition: all 0.3s ease;
+    z-index: 999;
+    font-family: 'Open Sans', sans-serif;
+}
+
+.chat-mini-toggle {
+    display: flex;
+    align-items: center;
+    background: linear-gradient(135deg, #5b7cfa 0%, #7579ff 100%);
+    color: white;
+    padding: 12px 20px;
+    border-radius: 10px 10px 0 0;
+    cursor: pointer;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    transition: all 0.3s ease;
+}
+
+.chat-mini-toggle:hover {
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    transform: translateY(-2px);
+}
+
+.chat-icon {
+    font-size: 20px;
+    margin-right: 10px;
+}
+
+.chat-label {
+    font-weight: 500;
+    font-size: 15px;
+    margin-right: 20px;
+}
+
+.chat-badge {
+    position: absolute;
+    top: 5px;
+    left: 28px;
+    background: #f44336;
+    color: white;
+    border-radius: 50%;
+    min-width: 18px;
+    height: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: bold;
+    padding: 0 4px;
+}
+
+.collapse-btn {
+    background: transparent;
+    border: none;
+    color: white;
+    cursor: pointer;
+    font-size: 14px;
+    margin-left: auto;
+    padding: 0;
+}
+
+.chat-mini-dropdown {
+    width: 320px;
+    background: white;
+    border-radius: 10px 0 0 0;
+    box-shadow: 0 -4px 15px rgba(0, 0, 0, 0.15);
+    overflow: hidden;
+    max-height: 400px;
+    display: flex;
+    flex-direction: column;
+}
+
+.chat-mini-header {
+    padding: 10px 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #f8f9fa;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.chat-mini-header h4 {
+    margin: 0;
+    font-weight: 600;
+    font-size: 14px;
+    color: #333;
+}
+
+.chat-mini-header button {
+    background: transparent;
+    border: none;
+    font-size: 16px;
+    color: #666;
+    cursor: pointer;
+}
+
+.chat-mini-content {
+    overflow-y: auto;
+    max-height: 350px;
+}
+
+.chat-mini-item {
+    display: flex;
+    padding: 12px 15px;
+    border-bottom: 1px solid #f1f1f1;
+    cursor: pointer;
+    transition: background 0.2s;
+    align-items: center;
+}
+
+.chat-mini-item:hover {
+    background: #f8f9fa;
+}
+
+.chat-mini-item.has-unread {
+    background: rgba(246, 213, 92, 0.1);
+    border-left: 3px solid #f6d55c;
+}
+
+.chat-mini-avatar {
+    position: relative;
+    margin-right: 12px;
+}
+
+.chat-mini-avatar img {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.status-dot {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    border: 2px solid white;
+}
+
+.status-dot.online {
+    background: #28a745;
+}
+
+.status-dot.offline {
+    background: #dc3545;
+}
+
+.chat-mini-info {
+    flex: 1;
+    min-width: 0; /* Để text truncate có thể hoạt động */
+}
+
+.chat-mini-info h3 {
+    margin: 0 0 2px;
+    font-size: 14px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.chat-mini-info p {
+    margin: 0;
+    font-size: 12px;
+    color: #666;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 180px;
+}
+
+.chat-mini-meta {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    margin-left: 8px;
+}
+
+.time-ago {
+    color: #999;
+    font-size: 11px;
+}
+
+.unread-count {
+    background: var(--primary-color, #e51f40);
+    color: white;
+    font-size: 11px;
+    min-width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 4px;
+    padding: 0 4px;
+}
+
+.no-messages {
+    padding: 20px;
+    text-align: center;
+    color: #999;
+    font-size: 13px;
+}
+
+/* Khi thu gọn */
+.chat-mini-list.collapsed .chat-mini-toggle {
+    padding: 8px;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    justify-content: center;
+}
+
+.chat-mini-list.collapsed .chat-label {
+    display: none;
+}
+
+.chat-mini-list.collapsed .chat-icon {
+    margin-right: 0;
+}
+
+.chat-mini-list.collapsed .collapse-btn {
+    display: none;
+}
+
+.chat-mini-list.collapsed:hover .chat-label {
+    display: inline;
+    animation: fadeIn 0.3s;
+}
+
+.chat-mini-list.collapsed:hover .chat-mini-toggle {
+    width: auto;
+    height: auto;
+    border-radius: 25px;
+    padding: 10px 20px;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}

@@ -1,0 +1,38 @@
+.global-messaging {
+    position: fixed;
+    bottom: 0px;
+    right: 0;
+    z-index: 9999;
+    pointer-events: none; /* Cho phép click xuyên qua phần nền */
+    width: 100%;
+}
+
+.messager-container {
+    display: flex;
+    flex-direction: row-reverse;
+    gap: 15px;
+    padding: 10px 20px;
+    max-width: calc(100vw - 350px);
+    overflow-x: auto;
+    pointer-events: auto; /* Kích hoạt lại pointer events cho các phần tử con */
+    height: auto;
+    max-height: 70vh;
+}
+
+/* Tùy chỉnh thanh cuộn ngang */
+.messager-container::-webkit-scrollbar {
+    height: 5px;
+}
+
+.messager-container::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.messager-container::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 10px;
+}
+
+.messager-container::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 0, 0, 0.4);
+}

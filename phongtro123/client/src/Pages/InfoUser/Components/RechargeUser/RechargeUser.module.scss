@@ -1,0 +1,67 @@
+.success-modal {
+    .payment-details {
+        margin-top: 15px;
+        padding: 10px;
+        background-color: #f6ffed;
+        border-radius: 4px;
+        border: 1px solid #b7eb8f;
+
+        p {
+            margin: 8px 0;
+            font-size: 16px;
+        }
+    }
+}
+
+.payment-history {
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+
+    h4 {
+        margin-bottom: 16px;
+        color: #333;
+        position: relative;
+        padding-bottom: 10px;
+
+        &::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 50px;
+            height: 2px;
+            background-color: #1890ff;
+        }
+    }
+
+    .history-table {
+        margin-top: 10px;
+    }
+}
+
+.recharge-form {
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    margin-bottom: 10px;
+
+    h2 {
+        margin-bottom: 20px;
+        color: #333;
+        position: relative;
+        padding-bottom: 10px;
+
+        &::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 50px;
+            height: 2px;
+            background-color: #1890ff;
+        }
+    }
+}
