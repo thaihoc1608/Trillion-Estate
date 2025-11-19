@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Card, Row, Col, Statistic, Table, Typography, Progress, Avatar, Tag, Tooltip } from 'antd';
 import { Column } from '@ant-design/plots';
 import {
@@ -21,19 +21,7 @@ const cx = classNames.bind(styles);
 
 function Dashboard() {
     const [loading, setLoading] = useState(true);
-    const [stats, setStats] = useState({
-        totalUsers: 0,
-        totalPosts: 0,
-        totalTransactions: 0,
-        totalRevenue: 0,
-        userGrowth: 0,
-        postGrowth: 0,
-        transactionGrowth: 0,
-        revenueGrowth: 0,
-    });
-    const [postsData, setPostsData] = useState([]);
-    const [recentTransactions, setRecentTransactions] = useState([]);
-    const [topUsers, setTopUsers] = useState([]);
+    const [adminMetadata, setAdminMetadata] = useState(null);
 
     useEffect(() => {
         const fetchData = async () => {
@@ -41,26 +29,7 @@ function Dashboard() {
                 setLoading(true);
                 const res = await requestGetAdminStats();
                 if (res && res.metadata) {
-                    // Update statistics
-                    setStats({
-                        totalUsers: res.metadata.totalUsers || 0,
-                        totalPosts: res.metadata.totalPosts || 0,
-                        totalTransactions: res.metadata.totalTransactions || 0,
-                        totalRevenue: res.metadata.totalRevenue || 0,
-                        userGrowth: res.metadata.userGrowth || 0,
-                        postGrowth: res.metadata.postGrowth || 0,
-                        transactionGrowth: res.metadata.transactionGrowth || 0,
-                        revenueGrowth: res.metadata.revenueGrowth || 0,
-                    });
-
-                    // Update posts data for chart
-                    setPostsData(res.metadata.postsData || []);
-
-                    // Update recent transactions
-                    setRecentTransactions(res.metadata.recentTransactions || []);
-
-                    // Update top users
-                    setTopUsers(res.metadata.topUsers || []);
+                    setAdminMetadata(res.metadata);
                 }
             } catch (error) {
                 console.error('Error fetching admin stats:', error);
@@ -71,6 +40,62 @@ function Dashboard() {
         fetchData();
     }, []);
 
+    const defaultStats = useRef({
+        totalUsers: 0,
+        totalPosts: 0,
+        totalTransactions: 0,
+        totalRevenue: 0,
+        userGrowth: 0,
+        postGrowth: 0,
+        transactionGrowth: 0,
+        revenueGrowth: 0,
+    });
+
+    const lastStatsRef = useRef(defaultStats.current);
+    const stats = useMemo(() => {
+        if (!adminMetadata) {
+            return lastStatsRef.current;
+        }
+
+        const nextStats = {
+            totalUsers: Number(adminMetadata.totalUsers || 0),
+            totalPosts: Number(adminMetadata.totalPosts || 0),
+            totalTransactions: Number(adminMetadata.totalTransactions || 0),
+            totalRevenue: Number(adminMetadata.totalRevenue || 0),
+            userGrowth: Number(adminMetadata.userGrowth || 0),
+            postGrowth: Number(adminMetadata.postGrowth || 0),
+            transactionGrowth: Number(adminMetadata.transactionGrowth || 0),
+            revenueGrowth: Number(adminMetadata.revenueGrowth || 0),
+        };
+
+        lastStatsRef.current = nextStats;
+        return nextStats;
+    }, [adminMetadata]);
+
+    const postsDataRef = useRef([]);
+    const postsData = useMemo(() => {
+        if (Array.isArray(adminMetadata?.postsData)) {
+            postsDataRef.current = adminMetadata.postsData;
+        }
+        return postsDataRef.current;
+    }, [adminMetadata]);
+
+    const recentTransactionsRef = useRef([]);
+    const recentTransactions = useMemo(() => {
+        if (Array.isArray(adminMetadata?.recentTransactions)) {
+            recentTransactionsRef.current = adminMetadata.recentTransactions;
+        }
+        return recentTransactionsRef.current;
+    }, [adminMetadata]);
+
+    const topUsersRef = useRef([]);
+    const topUsers = useMemo(() => {
+        if (Array.isArray(adminMetadata?.topUsers)) {
+            topUsersRef.current = adminMetadata.topUsers;
+        }
+        return topUsersRef.current;
+    }, [adminMetadata]);
+
     // Column chart config
     const columnConfig = {
         data: postsData,
@@ -78,7 +103,7 @@ function Dashboard() {
         yField: 'posts',
         color: '#1a237e',
         label: {
-            position: 'middle',
+            position: 'top',
             style: {
                 fill: '#FFFFFF',
                 opacity: 0.6,
@@ -196,7 +221,7 @@ function Dashboard() {
 
             <Row gutter={[16, 16]}>
                 <Col xs={24} sm={12} lg={6}>
-                    <Card className={cx('stat-card')} bordered={false}>
+                    <Card className={cx('stat-card')} variant="filled">
                         <div className={cx('stat-icon', 'users')}>
                             <UserOutlined />
                         </div>
@@ -215,7 +240,7 @@ function Dashboard() {
                     </Card>
                 </Col>
                 <Col xs={24} sm={12} lg={6}>
-                    <Card className={cx('stat-card')} bordered={false}>
+                    <Card className={cx('stat-card')} variant="filled">
                         <div className={cx('stat-icon', 'posts')}>
                             <HomeOutlined />
                         </div>
@@ -234,7 +259,7 @@ function Dashboard() {
                     </Card>
                 </Col>
                 <Col xs={24} sm={12} lg={6}>
-                    <Card className={cx('stat-card')} bordered={false}>
+                    <Card className={cx('stat-card')} variant="filled">
                         <div className={cx('stat-icon', 'transactions')}>
                             <ShoppingOutlined />
                         </div>
@@ -276,7 +301,7 @@ function Dashboard() {
 
             <Row gutter={[16, 16]} className={cx('content-row')}>
                 <Col xs={24} lg={16}>
-                    <Card title="Lịch sử nạp tiền" className={cx('table-card')} loading={loading} bordered={false}>
+                    <Card title="Lịch sử nạp tiền" className={cx('table-card')} loading={loading} variant="filled">
                         <Table
                             dataSource={recentTransactions}
                             columns={transactionColumns}
@@ -287,7 +312,7 @@ function Dashboard() {
                     </Card>
                 </Col>
                 <Col xs={24} lg={8}>
-                    <Card title="Top người dùng" className={cx('users-card')} loading={loading} bordered={false}>
+                    <Card title="Top người dùng" className={cx('users-card')} loading={loading} variant="filled">
                         <div className={cx('top-users')}>
                             {topUsers.map((user, index) => (
                                 <div key={user.id} className={cx('user-item')}>
@@ -319,7 +344,7 @@ function Dashboard() {
                         title="Thống kê tin đăng 7 ngày gần đây"
                         className={cx('chart-card')}
                         loading={loading}
-                        bordered={false}
+                        variant="filled"
                     >
                         <Column {...columnConfig} />
                     </Card>

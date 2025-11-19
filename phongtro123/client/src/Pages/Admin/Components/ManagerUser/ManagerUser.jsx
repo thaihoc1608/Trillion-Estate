@@ -2,7 +2,7 @@ import { Table, Card, Row, Col, Statistic } from 'antd';
 import { UserOutlined, UserAddOutlined, UserDeleteOutlined, DollarOutlined } from '@ant-design/icons';
 import classNames from 'classnames/bind';
 import styles from './ManagerUser.module.scss';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { requestGetUsers } from '../../../../config/request';
 
 const cx = classNames.bind(styles);
@@ -50,36 +50,49 @@ const columns = [
 
 function ManagerUser() {
     const [userData, setUserData] = useState([]);
-    const [stats, setStats] = useState({
-        totalUsers: 0,
-        newUsers: 0,
-        activeUsers: 0,
-        inactiveUsers: 0,
-        totalRevenue: 0,
-    });
 
     useEffect(() => {
         const fetchData = async () => {
-            const res = await requestGetUsers();
-            const data = res.metadata;
-            setUserData(data);
-
-            // Calculate statistics
-            const now = new Date();
-            const thirtyDaysAgo = new Date(now.setDate(now.getDate() - 30));
-
-            const newStats = {
-                totalUsers: data.length,
-                newUsers: data.filter((item) => new Date(item.user.createdAt) > thirtyDaysAgo).length,
-                activeUsers: data.filter((item) => item.totalPost > 0).length,
-                inactiveUsers: data.filter((item) => item.totalPost === 0).length,
-                totalRevenue: data.reduce((sum, item) => sum + item.totalSpent, 0),
-            };
-
-            setStats(newStats);
+            try {
+                const res = await requestGetUsers();
+                const data = Array.isArray(res?.metadata) ? res.metadata : [];
+                setUserData(data);
+            } catch (error) {
+                console.error('Error fetching users:', error);
+                setUserData([]);
+            }
         };
         fetchData();
     }, []);
+
+    const stats = useMemo(() => {
+        if (!Array.isArray(userData) || userData.length === 0) {
+            return {
+                totalUsers: 0,
+                newUsers: 0,
+                activeUsers: 0,
+                inactiveUsers: 0,
+                totalRevenue: 0,
+            };
+        }
+
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+        const totalUsers = userData.length;
+        const newUsers = userData.filter((item) => new Date(item.user.createdAt) > thirtyDaysAgo).length;
+        const activeUsers = userData.filter((item) => item.totalPost > 0).length;
+        const inactiveUsers = totalUsers - activeUsers;
+        const totalRevenue = userData.reduce((sum, item) => sum + Number(item.totalSpent || 0), 0);
+
+        return {
+            totalUsers,
+            newUsers,
+            activeUsers,
+            inactiveUsers,
+            totalRevenue,
+        };
+    }, [userData]);
 
     return (
         <div className={cx('manager-user')}>

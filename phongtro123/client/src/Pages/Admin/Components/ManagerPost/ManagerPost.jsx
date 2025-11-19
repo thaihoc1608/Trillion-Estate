@@ -9,7 +9,7 @@ import {
 } from '@ant-design/icons';
 import { Button, Card, Col, Descriptions, Divider, Image, Input, Modal, Row, Space, Statistic, Table, Tag } from 'antd';
 import classNames from 'classnames/bind';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { requestApprovePost, requestGetAllPosts, requestRejectPost } from '../../../../config/request';
 import styles from './ManagerPost.module.scss';
 
@@ -21,13 +21,6 @@ function ManagerPost() {
     const [approvalReason, setApprovalReason] = useState('');
     const [posts, setPosts] = useState([]);
     const [loading, setLoading] = useState(false);
-    const [stats, setStats] = useState({
-        totalPosts: 0,
-        activePosts: 0,
-        inactivePosts: 0,
-        totalRevenue: 0,
-    });
-
     const handleViewDetails = (post) => {
         setSelectedPost(post);
         setIsModalVisible(true);
@@ -50,24 +43,12 @@ function ManagerPost() {
     const fetchData = async () => {
         setLoading(true);
         try {
-            // Fetch all posts without status filter to get all posts
-            const res = await requestGetAllPosts({ status: 'inactive' });
-            if (res && res.metadata) {
-                setPosts(res.metadata);
-
-                // Calculate statistics
-                const totalPosts = res.metadata.length;
-                const activePosts = res.metadata.filter((post) => post.status === 'active').length;
-                const inactivePosts = res.metadata.filter((post) => post.status === 'inactive').length;
-                const totalRevenue = res.metadata.reduce((sum, post) => sum + post.price, 0);
-
-                setStats({
-                    totalPosts,
-                    activePosts,
-                    inactivePosts,
-                    totalRevenue,
-                });
+            const res = await requestGetAllPosts();
+            if (!Array.isArray(res?.metadata)) {
+                throw new Error('Invalid posts payload');
             }
+
+            setPosts(res.metadata);
         } catch (error) {
             console.error('Error fetching posts:', error);
         } finally {
@@ -78,6 +59,29 @@ function ManagerPost() {
     useEffect(() => {
         fetchData();
     }, []);
+
+    const stats = useMemo(() => {
+        if (!Array.isArray(posts) || posts.length === 0) {
+            return {
+                totalPosts: 0,
+                activePosts: 0,
+                inactivePosts: 0,
+                totalRevenue: 0,
+            };
+        }
+
+        const totalPosts = posts.length;
+        const activePosts = posts.filter((post) => post.status?.toLowerCase() === 'active').length;
+        const inactivePosts = posts.filter((post) => post.status?.toLowerCase() === 'inactive').length;
+        const totalRevenue = posts.reduce((sum, post) => sum + Number(post.price || 0), 0);
+
+        return {
+            totalPosts,
+            activePosts,
+            inactivePosts,
+            totalRevenue,
+        };
+    }, [posts]);
 
     const handleApprove = async (postId) => {
         try {
@@ -148,8 +152,10 @@ function ManagerPost() {
                 const statusConfig = {
                     active: { color: 'green', text: 'Đã duyệt' },
                     inactive: { color: 'orange', text: 'Chờ duyệt' },
+                    cancel: { color: 'red', text: 'Đã từ chối' },
                 };
-                return <Tag color={statusConfig[status].color}>{statusConfig[status].text}</Tag>;
+                const { color, text } = statusConfig[status] || { color: 'default', text: status };
+                return <Tag color={color}>{text}</Tag>;
             },
         },
         {
