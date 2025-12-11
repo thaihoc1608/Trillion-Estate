@@ -136,7 +136,13 @@ class controllerPosts {
             }
         }
 
-        const dataPost = await modelPost.find(filter).sort({ createdAt: -1 });
+        const now = new Date();
+        const dataPost = await modelPost
+            .find({
+                ...filter,
+                $or: [{ endDate: { $exists: false } }, { endDate: null }, { endDate: { $gte: now } }],
+            })
+            .sort({ createdAt: -1 });
 
         const data = await Promise.all(
             dataPost.map(async (item) => {
@@ -205,6 +211,7 @@ class controllerPosts {
             .find({
                 createdAt: { $gte: fiveDaysAgo },
                 status: 'active',
+                $or: [{ endDate: { $exists: false } }, { endDate: null }, { endDate: { $gte: new Date() } }],
             })
             .sort({ createdAt: -1 })
             .limit(8);
@@ -216,7 +223,13 @@ class controllerPosts {
     }
 
     async getPostVip(req, res) {
-        const data = await modelPost.find({ typeNews: 'vip' }).limit(5);
+        const data = await modelPost
+            .find({
+                typeNews: 'vip',
+                status: 'active',
+                $or: [{ endDate: { $exists: false } }, { endDate: null }, { endDate: { $gte: new Date() } }],
+            })
+            .limit(5);
         return new OK({
             message: 'Post fetched successfully',
             metadata: data,
@@ -240,7 +253,7 @@ class controllerPosts {
 
     async getAllPosts(req, res) {
         const { status } = req.query;
-        const filter = { status: status };
+        const filter = status && status !== 'all' ? { status } : {};
         const data = await modelPost.find(filter);
         return new OK({
             message: 'Posts fetched successfully',
@@ -289,6 +302,7 @@ class controllerPosts {
             const data = await modelPost.find({
                 location: { $regex: new RegExp(districtCity, 'i') },
                 status: 'active',
+                $or: [{ endDate: { $exists: false } }, { endDate: null }, { endDate: { $gte: new Date() } }],
             });
 
             return new OK({
@@ -296,7 +310,10 @@ class controllerPosts {
                 metadata: data.length ? data : await modelPost.find({}),
             }).send(res);
         } else {
-            const data = await modelPost.find({ status: 'active' });
+            const data = await modelPost.find({
+                status: 'active',
+                $or: [{ endDate: { $exists: false } }, { endDate: null }, { endDate: { $gte: new Date() } }],
+            });
             return new OK({
                 message: 'Post fetched successfully',
                 metadata: data,
