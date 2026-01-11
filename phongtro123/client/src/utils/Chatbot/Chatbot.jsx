@@ -3,6 +3,7 @@ import styles from './Chatbot.module.scss';
 import { requestChatbot } from '../../config/request';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faComments, faTimes } from '@fortawesome/free-solid-svg-icons';
+import ReactMarkdown from 'react-markdown';
 
 const Chatbot = () => {
     const [isOpen, setIsOpen] = useState(false);
@@ -30,9 +31,33 @@ const Chatbot = () => {
             setIsLoading(true);
 
             try {
-                const response = await requestChatbot({ question: userMessage });
-                setMessages((prev) => [...prev, { text: response, sender: 'bot' }]);
+                // ✅ Fix: Lấy hoặc tạo userId ĐÚNG CÁCH
+                let userId = localStorage.getItem('chatUserId');
+                if (!userId) {
+                    // Tạo mới CHỈ KHI chưa có
+                    userId = `guest_${Date.now()}_${Math.random().toString(36).substr(2, 9)} `;
+                    localStorage.setItem('chatUserId', userId);
+                    console.log('🆔 Created new chat userId:', userId);
+                } else {
+                    console.log('🆔 Reusing chat userId:', userId);
+                }
+
+                const response = await requestChatbot({
+                    question: userMessage,
+                    userId
+                });
+
+                // Response format mới: { success, data, metadata }
+                const botMessage = response.success ? response.data : response;
+
+                setMessages((prev) => [...prev, { text: botMessage, sender: 'bot' }]);
+
+                // Optional: Log metadata để debug
+                if (response.metadata) {
+                    console.log('📊 Chatbot metadata:', response.metadata);
+                }
             } catch (error) {
+                console.error('Chatbot error:', error);
                 setMessages((prev) => [
                     ...prev,
                     {
@@ -64,15 +89,29 @@ const Chatbot = () => {
                         {messages.map((message, index) => (
                             <div
                                 key={index}
-                                className={`${styles.message} ${
-                                    message.sender === 'user' ? styles.userMessage : styles.botMessage
-                                }`}
+                                className={`${styles.message} ${message.sender === 'user' ? styles.userMessage : styles.botMessage
+                                    }`}
                             >
-                                <div className={styles.messageContent}>{message.text}</div>
+                                <div className={styles.messageContent}>
+                                    {message.sender === 'bot' ? (
+                                        <ReactMarkdown
+                                            components={{
+                                                // Custom components để style đẹp hơn
+                                                p: ({ node, ...props }) => <p style={{ margin: '0.5em 0' }} {...props} />,
+                                                strong: ({ node, ...props }) => <strong style={{ color: '#1890ff', fontWeight: 600 }} {...props} />,
+                                                a: ({ node, ...props }) => <a style={{ color: '#52c41a' }} {...props} target="_blank" rel="noopener noreferrer" />,
+                                            }}
+                                        >
+                                            {message.text}
+                                        </ReactMarkdown>
+                                    ) : (
+                                        message.text
+                                    )}
+                                </div>
                             </div>
                         ))}
                         {isLoading && (
-                            <div className={`${styles.message} ${styles.botMessage}`}>
+                            <div className={`${styles.message} ${styles.botMessage} `}>
                                 <div className={styles.messageContent}>
                                     <span className={styles.typingIndicator}>Đang nhập...</span>
                                 </div>

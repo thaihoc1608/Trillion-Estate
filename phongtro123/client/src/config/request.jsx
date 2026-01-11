@@ -47,6 +47,12 @@ export const requestAISearch = async (question) => {
     return res.data;
 };
 
+export const requestRenewPost = async (data) => {
+    const res = await request.post('/api/renew-post', data);
+    return res.data;
+};
+
+
 export const requestRegister = async (data) => {
     const response = await request.post('/api/register', data);
     return response.data;

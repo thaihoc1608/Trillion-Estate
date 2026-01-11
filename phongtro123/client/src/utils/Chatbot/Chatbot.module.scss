@@ -118,6 +118,56 @@
     color: #333;
     border-bottom-left-radius: 5px;
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+    
+    // Better typography for bot responses
+    .messageContent {
+        font-size: 0.9rem;
+        line-height: 1.6;
+        
+        // Markdown styling
+        p {
+            margin: 0.5em 0;
+            
+            &:first-child {
+                margin-top: 0;
+            }
+            
+            &:last-child {
+                margin-bottom: 0;
+            }
+        }
+        
+        strong {
+            color: #1890ff;
+            font-weight: 600;
+        }
+        
+        a {
+            color: #52c41a;
+            text-decoration: underline;
+            
+            &:hover {
+                color: #389e0d;
+            }
+        }
+        
+        ul, ol {
+            margin: 0.5em 0;
+            padding-left: 1.5em;
+        }
+        
+        li {
+            margin: 0.3em 0;
+        }
+        
+        code {
+            background: #f0f0f0;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85em;
+        }
+    }
 }
 
 .messageContent {

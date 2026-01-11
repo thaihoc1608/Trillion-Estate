@@ -55,6 +55,8 @@ function routes(app) {
     app.get('/api/get-all-posts', postRoutes);
     app.post('/api/approve-post', postRoutes);
     app.post('/api/reject-post', postRoutes);
+    app.post('/api/renew-post', postRoutes); // ✅ Renewal route
+
 
     /// payments
     app.post('/api/payments', paymentsRoutes);

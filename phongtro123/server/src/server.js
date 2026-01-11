@@ -43,12 +43,122 @@ app.use((req, res, next) => {
     next();
 });
 
+
 global.io.on('connect', socketServices.connection);
 
+// 🤖 Smart Chatbot Endpoints
+const { getChatbotInstance } = require('./utils/Chatbot/chatbot');
+
+// Initialize chatbot khi server start
+let chatbotReady = false;
+getChatbotInstance()
+    .initialize()
+    .then(() => {
+        chatbotReady = true;
+        console.log('✅ Smart Chatbot initialized successfully');
+    })
+    .catch((error) => {
+        console.error('❌ Failed to initialize Smart Chatbot:', error);
+    });
+
+// Chat endpoint (đã nâng cấp)
 app.post('/chat', async (req, res) => {
-    const { question } = req.body;
-    const data = await askQuestion(question);
-    return res.status(200).json(data);
+    try {
+        const { question, userId } = req.body;
+
+        if (!question) {
+            return res.status(400).json({
+                success: false,
+                message: 'Vui lòng nhập câu hỏi',
+            });
+        }
+
+        if (!chatbotReady) {
+            return res.status(503).json({
+                success: false,
+                message: 'Chatbot đang khởi động, vui lòng thử lại sau',
+            });
+        }
+
+        const chatbot = getChatbotInstance();
+        const result = await chatbot.askQuestion(question, userId);
+
+        return res.status(200).json({
+            success: true,
+            data: result.answer,
+            metadata: result.metadata,
+        });
+    } catch (error) {
+        console.error('Error in /chat:', error);
+        return res.status(500).json({
+            success: false,
+            message: 'Lỗi server',
+            error: error.message,
+        });
+    }
+});
+
+// Chatbot stats endpoint
+app.get('/chatbot/stats', async (req, res) => {
+    try {
+        const chatbot = getChatbotInstance();
+        const stats = await chatbot.getStats();
+
+        return res.status(200).json({
+            success: true,
+            data: stats,
+        });
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            error: error.message,
+        });
+    }
+});
+
+// Clear conversation endpoint
+app.post('/chatbot/clear-conversation', async (req, res) => {
+    try {
+        const { userId } = req.body;
+
+        if (!userId) {
+            return res.status(400).json({
+                success: false,
+                message: 'userId is required',
+            });
+        }
+
+        const chatbot = getChatbotInstance();
+        chatbot.clearConversation(userId);
+
+        return res.status(200).json({
+            success: true,
+            message: 'Conversation cleared',
+        });
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            error: error.message,
+        });
+    }
+});
+
+// Reload embeddings endpoint (admin only, sau khi có posts mới)
+app.post('/chatbot/reload', async (req, res) => {
+    try {
+        const chatbot = getChatbotInstance();
+        await chatbot.reload();
+
+        return res.status(200).json({
+            success: true,
+            message: 'Embeddings reloaded successfully',
+        });
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            error: error.message,
+        });
+    }
 });
 
 app.get('/ai-search', async (req, res) => {
@@ -57,6 +167,7 @@ app.get('/ai-search', async (req, res) => {
     const data = await AiSearch(question);
     return res.status(200).json(data);
 });
+
 
 app.use((err, req, res, next) => {
     const statusCode = err.statusCode || 500;

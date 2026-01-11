@@ -1,10 +1,11 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Card, Typography, Button, Table, Space, Popconfirm, message, Row, Col, Statistic, Tag } from 'antd';
-import { FileTextOutlined, PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
+import { FileTextOutlined, PlusOutlined, EditOutlined, DeleteOutlined, CalendarOutlined } from '@ant-design/icons';
 import classNames from 'classnames/bind';
 import styles from './ManagerPost.module.scss';
-import AddPostForm from './AddPostForm'; // Import the form component
-import { requestDeletePost, requestGetPostByUserId } from '../../../../config/request';
+import AddPostForm from './AddPostForm';
+import RenewPostModal from './RenewPostModal'; // ✅ Import Renewal Modal
+import { requestDeletePost, requestGetPostByUserId, requestRenewPost } from '../../../../config/request';
 import { useStore } from '../../../../hooks/useStore';
 
 const cx = classNames.bind(styles);
@@ -21,11 +22,15 @@ const categoryMap = {
 // NEW Checkbox options list (used for consistency)
 
 function ManagerPost() {
-    const [posts, setPosts] = useState([]); // Initialize with fake data
+    const [posts, setPosts] = useState([]);
     const [isFormVisible, setIsFormVisible] = useState(false);
-    const [editingPost, setEditingPost] = useState(null); // null for adding, post object for editing
+    const [editingPost, setEditingPost] = useState(null);
 
-    const { fetchAuth } = useStore();
+    // ✅ Renewal modal state
+    const [renewModalVisible, setRenewModalVisible] = useState(false);
+    const [renewingPost, setRenewingPost] = useState(null);
+
+    const { fetchAuth, dataUser } = useStore();
 
     const fetchPosts = async () => {
         const res = await requestGetPostByUserId();
@@ -74,21 +79,34 @@ function ManagerPost() {
         }
     };
 
+    // ✅ Renewal handlers
+    const handleRenewClick = (post) => {
+        setRenewingPost(post);
+        setRenewModalVisible(true);
+    };
+
+    const handleRenewPost = async (postId, days) => {
+        const data = { postId, days };
+        const res = await requestRenewPost(data);
+
+        // Refresh data
+        await fetchPosts();
+        await fetchAuth(); // Update balance
+
+        return res;
+    };
+
     const handleFormFinish = (formData) => {
         if (editingPost) {
-            // Editing existing post
             console.log('Updating Post:', editingPost.id, formData);
             setPosts(
                 posts.map((post) =>
-                    post.id === editingPost.id
-                        ? { ...post, ...formData } // Update existing post
-                        : post,
+                    post.id === editingPost.id ? { ...post, ...formData } : post,
                 ),
             );
             message.success('Post updated successfully! (Check Console)');
         } else {
-            // Adding new post
-            const newPost = { ...formData, id: Date.now() }; // Add a temporary ID
+            const newPost = { ...formData, id: Date.now() };
             setPosts([...posts, newPost]);
             message.success('Post added successfully! (Check Console)');
         }
@@ -153,11 +171,54 @@ function ManagerPost() {
             },
         },
         {
+            // ✅ Thêm column Hạn sử dụng
+            title: 'Hạn sử dụng',
+            dataIndex: 'endDate',
+            key: 'endDate',
+            render: (endDate) => {
+                if (!endDate) return <Tag>Vô thời hạn</Tag>;
+
+                const expiryDate = new Date(endDate);
+                const now = new Date();
+                const isExpired = expiryDate < now;
+                const daysLeft = Math.ceil((expiryDate - now) / (1000 * 60 * 60 * 24));
+
+                let color = 'green';
+                let text = expiryDate.toLocaleDateString('vi-VN');
+
+                if (isExpired) {
+                    color = 'red';
+                    text = 'Đã hết hạn';
+                } else if (daysLeft <= 3) {
+                    color = 'orange';
+                    text = `Còn ${daysLeft} ngày`;
+                }
+
+                return (
+                    <Space direction="vertical" size={0}>
+                        <Tag color={color}>{text}</Tag>
+                        {!isExpired && <div style={{ fontSize: 11, color: '#8c8c8c' }}>{expiryDate.toLocaleDateString('vi-VN')}</div>}
+                    </Space>
+                );
+            },
+        },
+        {
             title: 'Hành động',
             key: 'action',
-            render: (_, record) =>
-                record.status === 'pending' && (
-                    <Space size="middle">
+            render: (_, record) => (
+                <Space size="middle">
+                    {/* ✅ Button Gia hạn */}
+                    <Button
+                        icon={<CalendarOutlined />}
+                        onClick={() => handleRenewClick(record)}
+                        type="primary"
+                        ghost
+                    >
+                        Gia hạn
+                    </Button>
+
+                    {/* Delete button */}
+                    {record.status === 'pending' && (
                         <Popconfirm
                             title="Bạn chắc chắn muốn xóa?"
                             onConfirm={() => handleDeletePost(record._id)}
@@ -168,8 +229,9 @@ function ManagerPost() {
                                 Xóa
                             </Button>
                         </Popconfirm>
-                    </Space>
-                ),
+                    )}
+                </Space>
+            ),
         },
     ];
 
@@ -224,7 +286,7 @@ function ManagerPost() {
                             <Title level={5} style={{ marginBottom: 16 }}>
                                 Danh sách chi tiết
                             </Title>
-                            <Table columns={columns} dataSource={posts} rowKey="id" bordered pagination={false} />
+                            <Table columns={columns} dataSource={posts} rowKey="_id" bordered pagination={false} />
                         </>
                     ) : (
                         // Placeholder when no posts exist
@@ -236,6 +298,18 @@ function ManagerPost() {
                     )}
                 </div>
             )}
+
+            {/* ✅ Renewal Modal */}
+            <RenewPostModal
+                visible={renewModalVisible}
+                post={renewingPost}
+                userBalance={dataUser?.balance || 0}
+                onCancel={() => {
+                    setRenewModalVisible(false);
+                    setRenewingPost(null);
+                }}
+                onRenew={handleRenewPost}
+            />
         </div>
     );
 }

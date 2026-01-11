@@ -65,8 +65,17 @@ class controllerPosts {
                 ? pricePostVip.find((item) => item.date === dateEnd)
                 : pricePostNormal.find((item) => item.date === dateEnd);
 
+        // ✅ FIX: Check pricePost valid
+        if (!pricePost) {
+            throw new BadRequestError(`Gói ${dateEnd} ngày không hợp lệ. Vui lòng chọn gói: 3, 7, hoặc 30 ngày`);
+        }
+
+        // Debug log để check
+        console.log(`💰 Post pricing: type=${typeNews}, days=${dateEnd}, price=${pricePost.price}`);
+        console.log(`💳 User balance: ${user.balance}`);
+
         if (user.balance < pricePost.price) {
-            throw new BadRequestError('Số dư không đủ');
+            throw new BadRequestError(`Số dư không đủ. Cần: ${pricePost.price.toLocaleString()}đ, Hiện tại: ${user.balance.toLocaleString()}đ`);
         }
 
         const post = await modelPost.create({
@@ -270,6 +279,23 @@ class controllerPosts {
         }
         await modelPost.findByIdAndUpdate(id, { status: 'active' });
         await SendMailApprove(findUser.email, findPost);
+
+        // ✅ AUTO-GENERATE EMBEDDING after approve
+        try {
+            const { getChatbotInstance } = require('../utils/Chatbot/chatbot');
+            const chatbot = getChatbotInstance();
+
+            console.log(`🤖 Auto-generating embedding for post ${id}...`);
+            await chatbot.generatePostEmbedding(id);
+
+            // Reload chatbot to include new post
+            await chatbot.reload();
+            console.log(`✅ Chatbot updated with new post ${id}`);
+        } catch (error) {
+            console.error('⚠️  Failed to generate embedding (non-blocking):', error.message);
+            // Don't throw - approval still succeeds even if embedding fails
+        }
+
         return new OK({
             message: 'Duyệt bài viết thành công',
             metadata: findPost,
@@ -285,6 +311,105 @@ class controllerPosts {
         return new OK({
             message: 'Từ chối bài viết thành công',
             metadata: findPost,
+        }).send(res);
+    }
+
+    /**
+     * Gia hạn bài đăng
+     * Tính giá dựa trên typeNews và số ngày
+     */
+    async renewPost(req, res) {
+        const { id } = req.user;
+        const { postId, days } = req.body;
+
+        if (!postId || !days) {
+            throw new BadRequestError('Vui lòng nhập đầy đủ thông tin');
+        }
+
+        // Validate days (chỉ cho phép 3, 7, 30)
+        if (![3, 7, 30].includes(days)) {
+            throw new BadRequestError('Số ngày gia hạn không hợp lệ (chỉ cho phép: 3, 7, 30 ngày)');
+        }
+
+        // Tìm post
+        const post = await modelPost.findById(postId);
+        if (!post) {
+            throw new BadRequestError('Bài đăng không tồn tại');
+        }
+
+        // Check ownership
+        if (post.userId !== id) {
+            throw new BadRequestError('Bạn không có quyền gia hạn bài đăng này');
+        }
+
+        // Tìm user
+        const user = await modelUser.findById(id);
+        if (!user) {
+            throw new BadRequestError('User không tồn tại');
+        }
+
+        // Tính giá gia hạn
+        const priceList = post.typeNews === 'vip' ? pricePostVip : pricePostNormal;
+        const pricePackage = priceList.find((item) => item.date === days);
+
+        if (!pricePackage) {
+            throw new BadRequestError('Gói gia hạn không tồn tại');
+        }
+
+        // Check balance
+        if (user.balance < pricePackage.price) {
+            throw new BadRequestError(
+                `Số dư không đủ. Cần: ${pricePackage.price.toLocaleString()}đ, Còn: ${user.balance.toLocaleString()}đ`
+            );
+        }
+
+        // Calculate new endDate
+        const now = new Date();
+        const currentEndDate = new Date(post.endDate);
+
+        // Nếu post còn hiệu lực, gia hạn từ endDate cũ
+        // Nếu đã hết hạn, gia hạn từ hôm nay
+        const baseDate = currentEndDate > now ? currentEndDate : now;
+        const newEndDate = new Date(baseDate);
+        newEndDate.setDate(newEndDate.getDate() + days);
+
+        // Update post
+        await modelPost.findByIdAndUpdate(postId, {
+            endDate: newEndDate,
+            status: 'active', // Auto active lại nếu bị inactive
+        });
+
+        // Trừ balance
+        await modelUser.findByIdAndUpdate(id, {
+            $inc: { balance: -pricePackage.price },
+        });
+
+        // Reload chatbot vector store (nếu post được active lại)
+        try {
+            const { getChatbotInstance } = require('../utils/Chatbot/chatbot');
+            const chatbot = getChatbotInstance();
+
+            // Nếu post chưa có embedding, generate luôn
+            if (!post.embedding || post.embedding.length === 0) {
+                await chatbot.generatePostEmbedding(postId);
+            }
+
+            await chatbot.reload();
+            console.log('✅ Chatbot reloaded after post renewal');
+        } catch (error) {
+            console.error('⚠️  Lỗi reload chatbot:', error.message);
+            // Không throw error để không block renewal flow
+        }
+
+        return new OK({
+            message: `Gia hạn thành công ${days} ngày`,
+            metadata: {
+                postId,
+                oldEndDate: post.endDate,
+                newEndDate,
+                price: pricePackage.price,
+                remainingBalance: user.balance - pricePackage.price,
+            },
         }).send(res);
     }
 

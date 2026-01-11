@@ -16,6 +16,7 @@ router.post('/api/delete-post', authUser, asyncHandler(controllerPosts.deletePos
 router.get('/api/get-all-posts', authAdmin, asyncHandler(controllerPosts.getAllPosts));
 router.post('/api/approve-post', authAdmin, asyncHandler(controllerPosts.approvePost));
 router.post('/api/reject-post', authAdmin, asyncHandler(controllerPosts.rejectPost));
+router.post('/api/renew-post', authUser, asyncHandler(controllerPosts.renewPost)); // ✅ Renewal route
 
 router.get('/api/post-suggest', authUser, asyncHandler(controllerPosts.postSuggest));
 

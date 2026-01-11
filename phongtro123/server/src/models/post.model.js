@@ -63,6 +63,19 @@ const modelPost = new Schema(
             type: Date,
             required: true,
         },
+        // 🆕 Vector Embedding fields cho Smart Chatbot
+        embedding: {
+            type: [Number], // Array of 768 dimensions (Gemini embedding size)
+            required: false,
+        },
+        embeddingText: {
+            type: String, // Text đã dùng để tạo embedding
+            required: false,
+        },
+        embeddingUpdatedAt: {
+            type: Date, // Timestamp khi embedding được tạo/update
+            required: false,
+        },
     },
     {
         timestamps: true,
